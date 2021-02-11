@@ -11,6 +11,10 @@ var UserSchema = new mongoose_1.Schema({
     appState: {
         action: String,
         payload: Object
+    },
+    apikey: {
+        type: String,
+        unique: true
     }
 });
 exports.User = mongoose_1.model('User', UserSchema);

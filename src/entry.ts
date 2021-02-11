@@ -1,3 +1,4 @@
+import express from 'express'
 import { ACTIONS } from './actions';
 import { User } from './models/User';
 import { CONFIG } from './config';
@@ -8,6 +9,7 @@ import axios from 'axios'
 const BOT_TOKEN = CONFIG.BOT_TOKEN 
 
 const bot = new Telegraf(BOT_TOKEN)
+const app = express()
 
 
 type master = {id: string, name:string}
@@ -71,18 +73,34 @@ bot.use(async (ctx, next) => {
     user = userCheck
     next()
 })
-bot.command('test', ctx => {
-    //@ts-ignore
-    axios.get(appState.getPayload('setUpLink')+"/tel_api/loadMasters.php", {params: {apikey: user.apikey}}).then(res => {
-        const masters: master[] = JSON.parse(res.data.payload)
-        const menu = masterMenu(masters)
-        ctx.reply('Тепер ви можете обрати майстра, сповіщення про якого будуть вам надходити.', menu)
-        bot.action(masters.map(master => "master-"+master.id), ctx => {
-            console.log();
-            
-        })
+app.get('/', (req: express.Request, res: express.Response) => {
+    res.json({
+        application: "F5 Alert",
+        status: "working",
+        version: "1.0"
     })
 })
+
+app.get('/report/:master_id', async (req: express.Request, res: express.Response) => {
+    res.json({
+        reported: req.params.master_id
+    })
+    
+    for(let userRep of await User.find({ 'appState.payload.masterID': req.params.master_id, 'appState.payload.setUpLink': req.query.src })){
+        //@ts-ignore
+        bot.telegram.sendMessage(userRep.tel_id, `Поступив апарат! 
+📱  Модель: ${req.query.model || "невідомо"}
+🔴  Поломка: ${req.query.broke || "невідомо"}
+        `)
+    }
+    
+    
+})
+
+app.listen(CONFIG.PORT, () => console.log(`Server started on ${CONFIG.PORT}!
+http://localhost:${CONFIG.PORT}`) )
+
+
 bot.start(async ctx => {
     if(user){
         ctx.reply('Ви уже користувалися цією командою....')
@@ -102,10 +120,20 @@ bot.start(async ctx => {
     }
 
 })
-
 bot.command('setup', ctx => {
     ctx.reply("Ок, введіть посилання на ваш екземпляр CRM")
     appState.set('action', ACTIONS.SETUP_LINK)
+})
+bot.command('cancel', ctx => {
+    appState.set('action', ACTIONS.WAITING)
+    ctx.reply("Остання подія відмінена!")
+})
+bot.command('test', ctx => {
+    //@ts-ignore
+    axios.get(appState.getPayload('setUpLink')+"/tel_api/subscribe.php", {params: {apikey: user.apikey, redirect: CONFIG.HOST+":"+CONFIG.PORT+"/report"}}).then(res => {
+        console.log(res);
+        
+    })
 })
 // bot.on('')
 bot.on('message', ctx => {
@@ -148,6 +176,11 @@ bot.on('message', ctx => {
                         ctx.reply('Тепер ви можете обрати майстра, сповіщення про якого будуть вам надходити.', menu)
                         bot.action(masters.map(master => "master-"+master.id+"-"+master.name), ctx => {
                             const masterID = ctx.match[0].split('-')[1]
+                            appState.setPayload('masterID', masterID)
+                            ctx.reply('ID встановлено успішно!')
+                            appState.set('action', ACTIONS.WAITING)
+                            //@ts-ignore
+                            axios.get(appState.getPayload('setUpLink')+"/tel_api/subscribe.php", {params: {apikey: user.apikey, redirect: CONFIG.HOST+":"+CONFIG.PORT+"/report"}})
                         })
                     })
                 }else{

@@ -50,6 +50,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var express_1 = __importDefault(require("express"));
 var actions_1 = require("./actions");
 var User_1 = require("./models/User");
 var config_1 = require("./config");
@@ -58,6 +59,7 @@ var mongoose_1 = __importDefault(require("mongoose"));
 var axios_1 = __importDefault(require("axios"));
 var BOT_TOKEN = config_1.CONFIG.BOT_TOKEN;
 var bot = new telegraf_1.Telegraf(BOT_TOKEN);
+var app = express_1.default();
 var masterMenu = function (masters) {
     return telegraf_1.Markup.inlineKeyboard(masters.map(function (master) {
         return [telegraf_1.Markup.button.callback(master.name, "master-" + master.id + "-" + master.name)];
@@ -140,17 +142,40 @@ bot.use(function (ctx, next) { return __awaiter(void 0, void 0, void 0, function
         }
     });
 }); });
-bot.command('test', function (ctx) {
-    //@ts-ignore
-    axios_1.default.get(appState.getPayload('setUpLink') + "/tel_api/loadMasters.php", { params: { apikey: user.apikey } }).then(function (res) {
-        var masters = JSON.parse(res.data.payload);
-        var menu = masterMenu(masters);
-        ctx.reply('Тепер ви можете обрати майстра, сповіщення про якого будуть вам надходити.', menu);
-        bot.action(masters.map(function (master) { return "master-" + master.id; }), function (ctx) {
-            console.log();
-        });
+app.get('/', function (req, res) {
+    res.json({
+        application: "F5 Alert",
+        status: "working",
+        version: "1.0"
     });
 });
+app.get('/report/:master_id', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var _i, _a, userRep;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                res.json({
+                    reported: req.params.master_id
+                });
+                _i = 0;
+                return [4 /*yield*/, User_1.User.find({ 'appState.payload.masterID': req.params.master_id, 'appState.payload.setUpLink': req.query.src })];
+            case 1:
+                _a = _b.sent();
+                _b.label = 2;
+            case 2:
+                if (!(_i < _a.length)) return [3 /*break*/, 4];
+                userRep = _a[_i];
+                //@ts-ignore
+                bot.telegram.sendMessage(userRep.tel_id, "\u041F\u043E\u0441\u0442\u0443\u043F\u0438\u0432 \u0430\u043F\u0430\u0440\u0430\u0442! \n\uD83D\uDCF1  \u041C\u043E\u0434\u0435\u043B\u044C: " + (req.query.model || "невідомо") + "\n\uD83D\uDD34  \u041F\u043E\u043B\u043E\u043C\u043A\u0430: " + (req.query.broke || "невідомо") + "\n        ");
+                _b.label = 3;
+            case 3:
+                _i++;
+                return [3 /*break*/, 2];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); });
+app.listen(config_1.CONFIG.PORT, function () { return console.log("Server started on " + config_1.CONFIG.PORT + "!\nhttp://localhost:" + config_1.CONFIG.PORT); });
 bot.start(function (ctx) { return __awaiter(void 0, void 0, void 0, function () {
     var id, newUser;
     var _a;
@@ -181,6 +206,16 @@ bot.start(function (ctx) { return __awaiter(void 0, void 0, void 0, function () 
 bot.command('setup', function (ctx) {
     ctx.reply("Ок, введіть посилання на ваш екземпляр CRM");
     appState.set('action', actions_1.ACTIONS.SETUP_LINK);
+});
+bot.command('cancel', function (ctx) {
+    appState.set('action', actions_1.ACTIONS.WAITING);
+    ctx.reply("Остання подія відмінена!");
+});
+bot.command('test', function (ctx) {
+    //@ts-ignore
+    axios_1.default.get(appState.getPayload('setUpLink') + "/tel_api/subscribe.php", { params: { apikey: user.apikey, redirect: config_1.CONFIG.HOST + ":" + config_1.CONFIG.PORT + "/report" } }).then(function (res) {
+        console.log(res);
+    });
 });
 // bot.on('')
 bot.on('message', function (ctx) {
@@ -222,6 +257,11 @@ bot.on('message', function (ctx) {
                         ctx.reply('Тепер ви можете обрати майстра, сповіщення про якого будуть вам надходити.', menu);
                         bot.action(masters.map(function (master) { return "master-" + master.id + "-" + master.name; }), function (ctx) {
                             var masterID = ctx.match[0].split('-')[1];
+                            appState.setPayload('masterID', masterID);
+                            ctx.reply('ID встановлено успішно!');
+                            appState.set('action', actions_1.ACTIONS.WAITING);
+                            //@ts-ignore
+                            axios_1.default.get(appState.getPayload('setUpLink') + "/tel_api/subscribe.php", { params: { apikey: user.apikey, redirect: config_1.CONFIG.HOST + ":" + config_1.CONFIG.PORT + "/report" } });
                         });
                     });
                 }

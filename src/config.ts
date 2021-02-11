@@ -1,5 +1,6 @@
 export const CONFIG = {
-    BOT_TOKEN: "",
-    MONGO_URI: "",
-    PORT: "7070"
+    BOT_TOKEN: "1613409735:AAFcObDapUSD3MkrWigs5dPXpmUZP4wjuDc",
+    MONGO_URI: "mongodb+srv://root:root@cluster0.4gb9e.azure.mongodb.net/f5alert?retryWrites=true&w=majority",
+    PORT: "5000",
+    HOST: "https://f5alert.herokuapp.com/"
 }
