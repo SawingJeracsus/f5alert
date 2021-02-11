@@ -1,0 +1,23 @@
+{
+  "name": "telegraph_f5remont",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "form-data": "^3.0.0",
+    "mongoose": "^5.11.15",
+    "telegraf": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/express": "^4.17.11",
+    "@types/mongoose": "^5.10.3"
+  }
+}
