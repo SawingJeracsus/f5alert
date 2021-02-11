@@ -74,11 +74,7 @@ bot.use(async (ctx, next) => {
     next()
 })
 app.get('/', (req: express.Request, res: express.Response) => {
-    res.json({
-        application: "F5 Alert",
-        status: "working",
-        version: "1.0"
-    })
+    res.end('working well!')
 })
 
 app.get('/report/:master_id', async (req: express.Request, res: express.Response) => {
@@ -130,10 +126,7 @@ bot.command('cancel', ctx => {
 })
 bot.command('test', ctx => {
     //@ts-ignore
-    axios.get(appState.getPayload('setUpLink')+"/tel_api/subscribe.php", {params: {apikey: user.apikey, redirect: CONFIG.HOST+":"+CONFIG.PORT+"/report"}}).then(res => {
-        console.log(res);
-        
-    })
+    ctx.reply('pong)')
 })
 // bot.on('')
 bot.on('message', ctx => {
@@ -188,7 +181,11 @@ bot.on('message', ctx => {
                 }
                 
             })
+            
         break;
+        default:
+            ctx.reply("Я зараз нічого від тебе не прошу!")
+            break;
     }
 })
 

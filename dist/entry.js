@@ -143,11 +143,7 @@ bot.use(function (ctx, next) { return __awaiter(void 0, void 0, void 0, function
     });
 }); });
 app.get('/', function (req, res) {
-    res.json({
-        application: "F5 Alert",
-        status: "working",
-        version: "1.0"
-    });
+    res.end('working well!');
 });
 app.get('/report/:master_id', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var _i, _a, userRep;
@@ -213,9 +209,7 @@ bot.command('cancel', function (ctx) {
 });
 bot.command('test', function (ctx) {
     //@ts-ignore
-    axios_1.default.get(appState.getPayload('setUpLink') + "/tel_api/subscribe.php", { params: { apikey: user.apikey, redirect: config_1.CONFIG.HOST + ":" + config_1.CONFIG.PORT + "/report" } }).then(function (res) {
-        console.log(res);
-    });
+    ctx.reply('pong)');
 });
 // bot.on('')
 bot.on('message', function (ctx) {
@@ -269,6 +263,9 @@ bot.on('message', function (ctx) {
                     ctx.reply("Невірний логін, або пароль!");
                 }
             });
+            break;
+        default:
+            ctx.reply("Я зараз нічого від тебе не прошу!");
             break;
     }
 });
